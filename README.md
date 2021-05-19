@@ -78,4 +78,6 @@ Information about the Next-PM sensor is available on [the constructor website](h
     }
 
 # Licensing
+ GNU GENERAL PUBLIC LICENSE
  (c) Copyright © 2019, 2020, 2021, IRD & Université de Bourgogne
+ see 
