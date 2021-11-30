@@ -222,30 +222,30 @@ NextPM::CommandResponse NextPM::readData()
 void NextPM::readSTATE(byte * data, int ml)
 {
 	Serial.println("****************************************");
-	Serial.println(data[3],BIN);
+	Serial.println(data[2],BIN);
 	Serial.println("****************************************");
-		is_sleeping  = (data[3] & 0b00000001) ==0;
+	bool is_sleeping  = (data[2] & 0b00000001) ==1;
 	Serial.print ("sleeping state ");
 	Serial.println(is_sleeping);
-	is_degraded = (data[3] & 0b00000010) ==1;
+	bool is_degraded = (data[2] & 0b00000010) ==1;
 	Serial.print ("degraded state ");
 	Serial.println(is_degraded);
-	bool is_ready = (data[3] & 0b00000100) ==0;
+	bool is_ready = (data[2] & 0b00000100) ==0;
 	Serial.print ("ready state ");
 	Serial.println(is_ready);
-	bool is_temp_ok  = (data[3] & 0b00001000) ==0;
+	bool is_temp_ok  = (data[2] & 0b00001000) ==0;
 	Serial.print("check c°");
 	Serial.println(is_temp_ok);
-	bool is_TRX_ok  = (data[3] & 0b00010000) ==0;
+	bool is_TRX_ok  = (data[2] & 0b00010000) ==0;
 	Serial.print ("TRX state ");
 	Serial.println(is_TRX_ok);
-	bool is_fan_ok  = (data[3] & 0b00100000) ==0;
+	bool is_fan_ok  = (data[2] & 0b00100000) ==0;
 	Serial.print ("FAN state ");
 	Serial.println(is_fan_ok);
-	bool is_memory_ok = (data[3] & 0b01000000) ==0;
+	bool is_memory_ok = (data[2] & 0b01000000) ==0;
 	Serial.print ("memory state ");
 	Serial.println(is_memory_ok);
-	bool is_laser_ok = (data[3] & 0b10000000) ==0;
+	bool is_laser_ok = (data[2] & 0b10000000) ==0;
 	Serial.print ("laser state ");
 	Serial.println(is_laser_ok);
 }
@@ -308,6 +308,5 @@ uint16_t NextPM::CRC(byte * buf, int len)
 
   return res2;
 }
-
 
 
