@@ -49,6 +49,8 @@ public:
 
 protected:
   HardwareSerial* hstream;
+  SoftwareSerial* sstream;
+  Stream* stream;
 
 };
 #endif

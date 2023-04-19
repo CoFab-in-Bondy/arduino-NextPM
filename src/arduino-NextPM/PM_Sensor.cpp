@@ -17,6 +17,11 @@ PM_Sensor::PM_Sensor(HardwareSerial & s )
 	hstream = &s;
 }
 
+PM_Sensor::PM_Sensor(SoftwareSerial & s )
+{
+	sstream = &s;
+}
+
 bool PM_Sensor::read_1min(PM_DATA & data)
 {
 	PM_DATA tmp = readDuring(60000);

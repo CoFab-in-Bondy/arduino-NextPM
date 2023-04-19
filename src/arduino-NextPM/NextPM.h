@@ -42,8 +42,10 @@ public:
   bool readTempHumi(float & temp, float & humidity);
   void cleanSensor();
   void readSTATE(byte * data, int ml);
+  void Initialize();
 
   NextPM(HardwareSerial& s);
+  NextPM(SoftwareSerial& s);
   virtual ~NextPM();
 
 private:

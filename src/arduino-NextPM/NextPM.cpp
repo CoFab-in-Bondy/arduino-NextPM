@@ -12,16 +12,24 @@
 
 void NextPM::emptyBuffer()
 {
-	while(hstream->available())
+	while(stream->available())
 	{
-		hstream->read();
+		stream->read();
 	}
 }
 
 void NextPM::configure()
 {
-	Serial.write("configured");
-	hstream->begin(NEXTPM_BAUD,SERIAL_8E1);
+  if (hstream)
+  {
+    hstream->begin(NEXTPM_BAUD,SERIAL_8E1);
+  }
+  else
+  {
+    sstream->begin(NEXTPM_BAUD);
+  }
+  stream = !hstream? (Stream*)sstream : hstream;
+  Serial.write("configured\n");
 }
 
 bool NextPM::shutdown()
@@ -30,7 +38,7 @@ bool NextPM::shutdown()
 			return false;
 	emptyBuffer();
 	byte message [] = {0x81, 0x15, 0x6A};
-	hstream->write(message,sizeof(message));
+	stream->write(message,sizeof(message));
 	delay(NEXT_PM_COMMAND_DELAY);
 	return readData()==STOP_MEASURE;
 }
@@ -41,7 +49,7 @@ bool NextPM::powerOn()
 		return false;
 	emptyBuffer();
 	byte message [] = {0x81, 0x15, 0x6A};
-	hstream->write(message, sizeof(message));
+	stream->write(message, sizeof(message));
 	delay(NEXT_PM_COMMAND_DELAY);
 	return readData()==START_MEASURE;
 }
@@ -51,7 +59,7 @@ bool NextPM::isSleeping()
 
 	emptyBuffer();
 	byte message [] = {0x81,0x16,0x69};
-	hstream->write(message, sizeof(message));
+	stream->write(message, sizeof(message));
 	delay(NEXT_PM_COMMAND_DELAY);
 	if(readData()==SENSOR_STATE)
 		return is_sleeping;
@@ -63,7 +71,7 @@ bool NextPM::isActive()
 
 	emptyBuffer();
 	byte message [] = {0x81,0x16,0x69};
-	hstream->write(message, sizeof(message));
+	stream->write(message, sizeof(message));
 	delay(NEXT_PM_COMMAND_DELAY);
 	if(readData()==SENSOR_STATE)
 		return !is_sleeping;
@@ -78,7 +86,7 @@ void NextPM::cleanSensor()
 bool NextPM::read_1min(PM_DATA & data){
 	byte message1 [] = {0x81,0x12,0x6D};
 	emptyBuffer();
-	hstream->write(message1, sizeof(message1));
+	stream->write(message1, sizeof(message1));
 	delay(NEXT_PM_COMMAND_DELAY);
 	if(PM_MEASURE == this->readData())
 	{
@@ -93,7 +101,7 @@ bool NextPM::read_10sec(PM_DATA & data)
 	emptyBuffer();
 	byte message1 [] = {0x81,0x11,0x6E};//{0x81,0x11,0x6E};
 	Serial.write("\n\n\nread 10 sec");
-	hstream->write(message1, sizeof(message1));
+	stream->write(message1, sizeof(message1));
 
 	//this->hstream->write(message1, sizeof(message1));
 	delay(NEXT_PM_COMMAND_DELAY);
@@ -108,7 +116,7 @@ bool NextPM::read_10sec(PM_DATA & data)
 bool NextPM::read_5min(PM_DATA & data){
 	emptyBuffer();
 	byte message1 [] = {0x81, 0x13, 0x6C};// {0x81,0x12,0x6D};
-	hstream->write(message1, sizeof(message1));
+	stream->write(message1, sizeof(message1));
 	delay(NEXT_PM_COMMAND_DELAY);
 	if(PM_MEASURE == this->readData())
 	{
@@ -123,7 +131,7 @@ bool NextPM::read(PM_DATA & data)
 {
 	Serial.println("cousou");
 /*	byte message1 [] = {0x7E, 0x00, 0x03, 0x00, 0xFC, 0x7E};
-	this->hstream->write(message1, sizeof(message1));
+	this->stream->write(message1, sizeof(message1));
 	delay(NEXT_PM_COMMAND_DELAY);
 	if(PM_MEASURE == this->readData())
 	{
@@ -149,7 +157,7 @@ void NextPM::transcodeData(PM_DATA & data)
 bool NextPM::readTempHumi(float & temp, float & humidity)
 {
 	byte message [] = {0x81, 0x14, 0x6B};
-	this->hstream->write(message, sizeof(message));
+	this->stream->write(message, sizeof(message));
 	delay(NEXT_PM_COMMAND_DELAY);
 	if(this->readData()== TH_MEASURE)
 	{
@@ -162,15 +170,26 @@ bool NextPM::readTempHumi(float & temp, float & humidity)
 	return false;
 }
 
-NextPM::NextPM(HardwareSerial& s): PM_Sensor(s)
+void NextPM::Initialize()
 {
-	this->hstream = &s;
 	converter.array[0]=0;
 	converter.array[1]=0;
 	converter.array[2]=0;
 	converter.array[3]=0;
 	this->humidity = 0;
 	this->temperature = 0;
+}
+
+NextPM::NextPM(HardwareSerial& s): PM_Sensor(s)
+{
+	this->hstream = &s;
+  	this->Initialize();
+}
+
+NextPM::NextPM(SoftwareSerial& s): PM_Sensor(s)
+{
+	this->sstream = &s;
+  	this->Initialize();
 }
 
 NextPM::~NextPM() {
@@ -186,13 +205,13 @@ NextPM::CommandResponse NextPM::readData()
 	do
 	{
 
-	  int nbAvailable = hstream->available();
+	  int nbAvailable = stream->available();
 	  if( nbAvailable >3)
 	  {
 		  int index = 0;
 		  byte mbuffer [nbAvailable];
 
-		  int lr = hstream->readBytes(mbuffer, nbAvailable);
+		  int lr = stream->readBytes(mbuffer, nbAvailable);
 
 		  if(!checkCRC(mbuffer,nbAvailable))
 		  {
